@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+# small script to fetch the status of a hadoop namenode
+
+require 'net/http'
+require 'rubygems'
+require 'json'
+
+# go through the hiera tree we defined and look for the desired host types
+<%- namenodes = [] -%>
+<%- @nodes.each_pair do |hostname, hostinfo| -%>
+  <%- if hostinfo['type'] == 'namenode_active' or hostinfo['type'] == 'namenode_standby' -%>
+    <%- namenodes << '\''+hostname + '\'' -%>
+  <%- end -%>
+<%- end -%>
+
+namenodes = [<%= namenodes.join(',') %>]
+port = '50070'
+active_namenode = nil
+
+namenodes.each do |namenode|
+  begin
+    url = 'http://%s:%s/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus' % [namenode, port]
+    resp = Net::HTTP.get_response(URI.parse(url))
+  rescue StandardError
+    puts "Failed to connect to the namenodes."
+    exit 1
+  end
+  data = resp.body
+  parsed = JSON.parse(data)
+  parsed['beans'].each do |p|
+    if p['State'] == 'active'
+      active_namenode = namenode
+    end
+  end
+end
+
+puts active_namenode
+

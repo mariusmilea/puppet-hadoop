@@ -1,0 +1,10 @@
+# hadoop namenodes
+hadoop::nodes:
+    namenode1.domain:
+      ip: 10.0.0.1
+      rack: /rack1
+      type: namenode_active
+    namenode2.domain:
+      ip: 10.0.0.2
+      rack: /rack2
+      type: namenode_standby
